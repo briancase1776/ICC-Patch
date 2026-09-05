@@ -1,6 +1,6 @@
 #!/bin/sh
 # list: one line per patch, "DIR up|down SHAPE N LANES".
-# Up means every pipe and tee in it says up.
+# Up means every pipe and fitting in it says up.
 for d in /tmp/icc-patch-*/; do
   [ -d "$d" ] || continue
   d=${d%/}; s=up

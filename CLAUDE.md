@@ -1,7 +1,7 @@
 # ICC-Patch
 
-A Claude Code skill that patches ICC-Pipes pipes and ICC-Tee tees into a
-shape. That is the whole project.
+A Claude Code skill that patches ICC-Pipes pipes, ICC-Tee tees and
+ICC-Merge merges into a shape. That is the whole project.
 
 Think of a patch bay. A box of cables and fittings, a row of seats, and a
 plan on paper: seat 0 to seat 1, seat 1 to seat 2, and so on around. The
@@ -13,22 +13,26 @@ goes down the cables. This skill is the bay. Nothing more.
     what the bytes mean                someone else's, above this
     slice, carry, reassemble           ICC-Frames, beside this: it works
                                        any end the bay hands out
-    plug pipes and tees into a shape   this project
-    copy one pipe onto others          ICC-Tee, below this
+    plug pipes and fittings into a shape   this project
+    copy one pipe onto many            ICC-Tee, below this
+    copy many pipes onto one           ICC-Merge, below this
     the lane itself                    ICC-Pipes, below this
 
-Pipes does not know what is plugged into it. Tee copies lanes. Frames does
-not know what the bytes are. The bay knows none of that: it runs their
-create scripts, in a shape, and writes down which end went to which seat.
+Pipes does not know what is plugged into it. Tee and Merge copy lanes.
+Frames does not know what the bytes are. The bay knows none of that: it
+runs their create scripts, in a shape, and writes down which end went to
+which seat.
 
 ## What this is
 
-- A **patch**: the pipes and tees one shape needs over N seats, made by
-  their own skills, and a **map** saying which end each seat holds and
-  which seats are on the other side of it.
-- The shapes are ring and mesh, each plain or through tees that also go
-  back to the writer. Four shapes. Fewer seats means fewer cables, by the
-  shape alone: a writer with one reader gets a pipe, not a tee.
+- A **patch**: the pipes, tees and merges one shape needs over N seats,
+  made by their own skills, and a **map** saying which end each seat
+  holds and which seats are on the other side of it.
+- The shapes are ring and mesh, each plain or through fittings: tees
+  that also go back to the writer, merges that give each reader one end.
+  Four shapes. Fewer seats means fewer cables, by the shape alone: a
+  writer with one reader gets no tee, a reader with one writer no merge,
+  and one of each is a pipe.
 - The skill covers creating, listing, and removing patches. Using one is
   reading the map and holding the ends it names. Nothing else.
 
@@ -38,10 +42,8 @@ Out of scope. Do not build, stub, or "leave room for" any of these:
 
 - **The wire.** Making, holding, or removing a pipe. That is Pipes. The
   bay runs Pipes' scripts; it never copies or reimplements them.
-- **The fitting.** Copying lanes. That is Tee. Same rule.
-- **Fan-in.** Merging what many seats write onto one end is a fitting,
-  and belongs in a fitting's skill beside Tee. Here a reader holds one
-  end per writer.
+- **The fittings.** Copying lanes, one pipe onto many or many onto one.
+  That is Tee and Merge. Same rule.
 - **The payload.** Slicing, counts, frames. That is Frames.
 - **The content.** What the bytes mean. Formats, protocols, envelopes.
 - **Who sits where.** Which Claude is seat 3, how it learns that, how it
@@ -60,17 +62,18 @@ Before adding anything, ask: is this a cable, a fitting, what goes through
 them, or the bay that plugs them together in a shape and writes down where
 each plug went? Only the last one belongs here.
 
-## Depends on ICC-Pipes and ICC-Tee, proven through ICC-Frames
+## Depends on ICC-Pipes, ICC-Tee and ICC-Merge, proven through ICC-Frames
 
-The bay makes nothing but the map. create runs Pipes' and Tee's create
-scripts from sibling checkouts, `$ICC_PIPES` and `$ICC_TEE`, by default
-`../ICC-Pipes` and `../ICC-Tee` beside this repo, and remove runs their
-remove scripts. Tests push a Frames payload through what the bay made,
-from another sibling. Do not vendor any of them into this repo.
+The bay makes nothing but the map. create runs Pipes', Tee's and Merge's
+create scripts from sibling checkouts, `$ICC_PIPES`, `$ICC_TEE` and
+`$ICC_MERGE`, by default `../ICC-Pipes`, `../ICC-Tee` and `../ICC-Merge`
+beside this repo, and remove runs their remove scripts. Tests push a
+Frames payload through what the bay made, from another sibling. Do not
+vendor any of them into this repo.
 
 Do not duplicate their documentation. A fact about lanes is Pipes'; about
-copies, Tee's; about payloads, Frames'. If one of them is missing a fact,
-that is a change there, not a paragraph here.
+copies, Tee's and Merge's; about payloads, Frames'. If one of them is
+missing a fact, that is a change there, not a paragraph here.
 
 ## Testing
 
@@ -96,7 +99,7 @@ is too complicated, not the test.
   tell a seat when to write, how to wait, or what to do with what it
   reads.
 - **The shape decides the cables.** Nothing else does. No knob picks a
-  tee over a pipe; the reader count does.
+  tee or a merge over a pipe; the reader count and the writer count do.
 - **Never look at the bytes.** No script here reads a lane.
 
 ## Layout

@@ -1,33 +1,35 @@
 ---
 name: icc-patch
 description: >-
-  Patch icc-pipes pipes and icc-tee tees into a ring or a mesh over N
-  seats, plain or through tees that also go back to the writer, and hand
-  every seat a map of the ends it holds. The bay makes nothing but the
-  map. What goes down the cables, and who sits where, is the caller's
-  business.
+  Patch icc-pipes pipes, icc-tee tees and icc-merge merges into a ring
+  or a mesh over N seats, plain or through fittings that also go back to
+  the writer, and hand every seat a map of the ends it holds. The bay
+  makes nothing but the map. What goes down the cables, and who sits
+  where, is the caller's business.
 ---
 
 # icc-patch
 
-A patch is pipes that icc-pipes made and tees that icc-tee made, plugged
-into a shape over N seats, and a map. A seat is a number. Which Claude
+A patch is pipes that icc-pipes made, tees that icc-tee made and merges
+that icc-merge made, plugged into a shape over N seats, and a map. A seat is a number. Which Claude
 holds it is agreed outside this skill, like whose desk a cable runs to.
 
     /tmp/icc-patch-XXXXXXXX/patch    SHAPE N LANES, then one line per end
-    /tmp/icc-patch-XXXXXXXX/made     SCRIPTS DIR per pipe and tee, in order
+    /tmp/icc-patch-XXXXXXXX/made     SCRIPTS DIR per pipe and fitting, in order
 
 ## Operations
 
-    scripts/create SHAPE N [LANES]  make the pipes and tees SHAPE needs
+    scripts/create SHAPE N [LANES]  make the pipes and fittings SHAPE needs
                                     over N seats, LANES lanes each (even,
                                     default 2), print the patch's directory
     scripts/list                    one line per patch: DIR up|down SHAPE N LANES
-    scripts/remove DIR              remove the tees, then the pipes, then DIR
+    scripts/remove DIR              remove the fittings, then the pipes,
+                                    then DIR
 
-create runs the create scripts in `$ICC_PIPES` and `$ICC_TEE`, by default
-`../ICC-Pipes` and `../ICC-Tee` beside this repo. remove runs the remove
-scripts create used. If a piece is missing, create makes nothing.
+create runs the create scripts in `$ICC_PIPES`, `$ICC_TEE` and
+`$ICC_MERGE`, by default `../ICC-Pipes`, `../ICC-Tee` and `../ICC-Merge`
+beside this repo. remove runs the remove scripts create used. If a piece
+is missing, create makes nothing.
 
 ## Shapes
 
@@ -35,13 +37,16 @@ scripts create used. If a piece is missing, create makes nothing.
               around the end back to 0
     mesh      every two seats share a pipe, the lower seat on side 0
     tee-ring  seat i writes one end; a tee carries it to seat i+1 and
-              back to seat i
+              back to seat i. Seat i reads one end; a merge brings it
+              what seats i-1 and i wrote
     tee-mesh  seat i writes one end; a tee carries it to every seat,
-              seat i too
+              seat i too. Seat i reads one end; a merge brings it what
+              every seat wrote
 
 Fewer seats, fewer cables, by the shape alone. A writer with one reader
-gets a pipe, not a tee. ring 2 is one pipe. ring 1 is one pipe with seat 0
-on both ends. mesh 1 is no pipe. tee-ring 1 is ring 1.
+gets no tee, a reader with one writer no merge, and one of each is a
+pipe. ring 2 is one pipe. ring 1 is one pipe with seat 0 on both ends.
+mesh 1 is no pipe. tee-ring 1 is ring 1.
 
 ## The map
 
@@ -54,9 +59,10 @@ other side, comma separated. Pipes says what a side writes and reads.
 
 - On a pipe two seats share, ring and mesh, what SEAT writes there
   reaches PEERS and what it reads there came from PEERS. Both ways.
-- Through a tee, an end goes one way. The writer's end, side 0, sends to
-  PEERS and reads nothing. A reader's end, side 1, receives from its one
-  PEER and sends nowhere. Tee's SKILL.md says why.
+- Through fittings, tee-ring and tee-mesh, an end goes one way. The
+  write end, side 0, sends to PEERS and reads nothing. The read end,
+  side 1, receives from PEERS and sends nowhere. Tee's and Merge's
+  SKILL.md say why.
 
     grep '^3 ' "$x/patch"                          every end seat 3 holds
 
@@ -69,11 +75,14 @@ other side, comma separated. Pipes says what a side writes and reads.
 ## Facts
 
 - A patch is the sum of its parts. Every fact in Pipes' SKILL.md holds
-  for every end, and every fact in Tee's for every copy. The bay adds
-  nothing to them.
-- Through a tee, an outlet nobody reads stalls the others once it fills.
-  Read every outlet, or keep the payload inside one. Tee's SKILL.md has
-  the numbers.
+  for every end, and every fact in Tee's and Merge's for every copy. The
+  bay adds nothing to them.
+- On a read end that merges, nothing says which PEER a byte came from,
+  and two writing at once interleave, as Merge says. Whose turn it is,
+  is agreed above this skill.
+- Through fittings, a seat that never reads stalls every writer once its
+  end fills. Read every end, or keep the payload inside one. Tee's and
+  Merge's SKILL.md have the numbers.
 - A seat may sit in more than one patch. A ring and a mesh over the same
   seats is two patches.
 - list says up when every pipe and tee says up. If one is down, the
@@ -83,7 +92,7 @@ other side, comma separated. Pipes says what a side writes and reads.
 
 ## In Claude Code
 
-Every Bash call is a fresh shell. The pipes and tees are their own
+Every Bash call is a fresh shell. The pipes and fittings are their own
 processes, as their skills say, so a patch outlives calls. Seats in one
 session share the container and its /tmp; sessions do not, so no patch
 crosses that line.

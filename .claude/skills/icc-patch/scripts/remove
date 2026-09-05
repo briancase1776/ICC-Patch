@@ -1,5 +1,5 @@
 #!/bin/sh
-# remove DIR: remove the tees, then the pipes, in the reverse of the order
+# remove DIR: remove the fittings, then the pipes, in the reverse of the order
 # create made them, then delete DIR. DIR is what create printed.
 set -eu
 d=${1:?usage: remove DIR}

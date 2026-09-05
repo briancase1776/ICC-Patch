@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 P=${ICC_PIPES:-../ICC-Pipes}/.claude/skills/icc-pipes/scripts
 F=${ICC_FRAMES:-../ICC-Frames}/.claude/skills/icc-frames/scripts
 T=${ICC_TEE:-../ICC-Tee}/.claude/skills/icc-tee/scripts
+M=${ICC_MERGE:-../ICC-Merge}/.claude/skills/icc-merge/scripts
 S=.claude/skills/icc-patch/scripts
 end() { awk -v s="$1" -v i="$2" -v p="$3" \
   '$1==s && $2==i && ("," $4 ",") ~ ("," p ",") {print $3}' "$x/patch"; }
@@ -39,19 +40,23 @@ printf 'hi' > "$(end 3 1 1)/1"; [ "$(timeout 1 cat "$(end 1 0 3)/1")" = hi ]
 x=$("$S/create" mesh 1); made icc-pipes 0; "$S/remove" "$x"
 x=$("$S/create" tee-mesh 3 6)
 "$S/list" | grep -qx "$x up tee-mesh 3 6"
-made icc-pipes 12; made icc-tee 3
+made icc-pipes 15; made icc-tee 3; made icc-merge 3
+[ "$(grep -c '^2 ' "$x/patch")" -eq 2 ]
 "$F/write" "$(end 1 0 2)" 0 < in
 for r in 0 1 2; do timeout 5 "$F/read" "$(end $r 1 1)" 1 > out; cmp in out; done
+printf 'a' > "$(end 0 0 2)/2"; printf 'b' > "$(end 2 0 0)/2"
+case $(timeout 1 cat "$(end 1 1 0)/2") in ab|ba) ;; *) exit 1;; esac
 "$S/remove" "$x"
 x=$("$S/create" tee-ring 3)
-made icc-pipes 9; made icc-tee 3
+made icc-pipes 12; made icc-tee 3; made icc-merge 3
 printf 'round' > "$(end 1 0 2)/0"
 for r in 1 2; do [ "$(timeout 1 cat "$(end $r 1 1)/0")" = round ]; done
 [ -z "$(end 0 1 1)" ]
 m=$(cut -d' ' -f2 "$x/made")
 "$S/remove" "$x"; [ ! -d "$x" ]
 for p in $m; do [ ! -e "$p" ]; done
-x=$("$S/create" tee-ring 1); made icc-pipes 1; made icc-tee 0; "$S/remove" "$x"
+x=$("$S/create" tee-ring 1); made icc-pipes 1; made icc-tee 0; made icc-merge 0
+"$S/remove" "$x"
 [ -z "$("$S/list")" ]
 rm -f in out
 trap - EXIT
