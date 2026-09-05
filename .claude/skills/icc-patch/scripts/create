@@ -6,8 +6,8 @@
 set -eu
 [ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
 shape=$1; n=$2; lanes=${3:-2}
-case $shape in ring|mesh|tee-ring|tee-mesh) ;;
-  *) echo "shape is ring, mesh, tee-ring or tee-mesh" >&2; exit 1;; esac
+case $shape in ring|mesh|ring-p|mesh-p) ;;
+  *) echo "shape is ring, mesh, ring-p or mesh-p" >&2; exit 1;; esac
 [ "$n" -ge 1 ] 2>/dev/null || { echo "seats must be 1 or more" >&2; exit 1; }
 top=$(cd "$(dirname "$0")/../../../.." && pwd)
 P=$(cd "${ICC_PIPES:-$top/../ICC-Pipes}/.claude/skills/icc-pipes/scripts" && pwd)
@@ -17,39 +17,32 @@ d=$(mktemp -d /tmp/icc-patch-XXXXXXXX)
 echo "$shape $n $lanes" > "$d/patch"; : > "$d/made"
 trap '"$(dirname "$0")/remove" "$d"' EXIT
 pipe() { p=$("$P/create" "$lanes"); echo "$P $p" >> "$d/made"; echo "$p"; }
+tee() { t=$("$T/create" "$@"); echo "$T $t" >> "$d/made"; }
+merge() { g=$("$M/create" "$@"); echo "$M $g" >> "$d/made"; }
 end() { echo "$1 $2 $3 $(echo "$4" | tr ' ' ,)" >> "$d/patch"; }
 cable() {  # cable A B: one pipe, seat A on side 0, seat B on side 1
   p=$(pipe); end "$1" 0 "$p" "$2"; end "$2" 1 "$p" "$1"
 }
-all=; i=0; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
+all=0; i=1; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
 case $shape in
-  ring) m=$n; [ "$n" -eq 2 ] && m=1
-        i=0; while [ "$i" -lt "$m" ]; do cable "$i" $(( (i + 1) % n )); i=$((i + 1)); done
-        trap - EXIT; echo "$d"; exit ;;
-  mesh) for i in $all; do for j in $all; do [ "$j" -gt "$i" ] && cable "$i" "$j"; done; done
-        trap - EXIT; echo "$d"; exit ;;
+  ring)
+    case $n in 1) cable 0 0 ;; 2) cable 0 1 ;;
+      *) for i in $all; do cable "$i" $(( (i + 1) % n )); done ;; esac ;;
+  mesh|mesh-p)
+    set -- $all; [ "$shape" = mesh ] || set -- "$@" p
+    case $# in 1) ;; 2) cable "$1" "$2" ;;
+      *) b=$(pipe); ins=; outs=
+         for s; do w=$(pipe); r=$(pipe); ins="$ins $w"; outs="$outs $r"
+           end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
+         merge "$b" 0 $ins; tee "$b" 0 $outs ;; esac ;;
+  ring-p)
+    xs=
+    for i in $all; do j=$(( (i + 1) % n ))
+      w=$(pipe); r=$(pipe); x=$(pipe); xs="$xs $x"
+      end "$i" 0 "$w" "$j p"; end "$j" 1 "$r" "$i"; tee "$w" 0 "$r" "$x"
+    done
+    q=$x; [ "$n" -eq 1 ] || { q=$(pipe); merge "$q" 0 $xs; }
+    end p 1 "$q" "$all" ;;
 esac
-# Through fittings. Seat i writes one end and reads one end. readers I says
-# who reads what I writes; writers R says who writes what R reads. A writer
-# with one reader gets no tee, a reader with one writer no merge.
-readers() { case $shape in tee-mesh) echo "$all";;
-  *) j=$(( ($1 + 1) % n )); [ "$j" -eq "$1" ] && echo "$1" || echo "$j $1";; esac; }
-writers() { case $shape in tee-mesh) echo "$all";;
-  *) j=$(( ($1 + n - 1) % n )); [ "$j" -eq "$1" ] && echo "$1" || echo "$j $1";; esac; }
-for i in $all; do for r in $(readers "$i"); do eval "x_${i}_$r=\$(pipe)"; done; done
-for i in $all; do
-  set -- $(readers "$i")
-  if [ $# -eq 1 ]; then eval "e=\$x_${i}_$1"
-  else e=$(pipe); outs=; for r; do eval "outs=\"\$outs \$x_${i}_$r\""; done
-    t=$("$T/create" "$e" 0 $outs); echo "$T $t" >> "$d/made"; fi
-  end "$i" 0 "$e" "$*"
-done
-for r in $all; do
-  set -- $(writers "$r")
-  if [ $# -eq 1 ]; then eval "e=\$x_$1_$r"
-  else e=$(pipe); ins=; for i; do eval "ins=\"\$ins \$x_${i}_$r\""; done
-    g=$("$M/create" "$e" 0 $ins); echo "$M $g" >> "$d/made"; fi
-  end "$r" 1 "$e" "$*"
-done
 trap - EXIT
 echo "$d"

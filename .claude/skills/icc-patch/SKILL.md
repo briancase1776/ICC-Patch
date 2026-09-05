@@ -1,18 +1,19 @@
 ---
 name: icc-patch
 description: >-
-  Patch icc-pipes pipes, icc-tee tees and icc-merge merges into a ring
-  or a mesh over N seats, plain or through fittings that also go back to
-  the writer, and hand every seat a map of the ends it holds. The bay
-  makes nothing but the map. What goes down the cables, and who sits
-  where, is the caller's business.
+  Patch icc-pipes pipes, icc-tee tees and icc-merge merges into a ring or
+  a mesh over N seats, with or without a parent in on it, and hand every
+  seat a map of the ends it holds. The bay makes nothing but the map.
+  What goes down the cables, and who sits where, is the caller's
+  business.
 ---
 
 # icc-patch
 
 A patch is pipes that icc-pipes made, tees that icc-tee made and merges
-that icc-merge made, plugged into a shape over N seats, and a map. A seat is a number. Which Claude
-holds it is agreed outside this skill, like whose desk a cable runs to.
+that icc-merge made, plugged into a shape over N seats, and a map. A seat
+is a number. Which Claude holds it is agreed outside this skill, like
+whose desk a cable runs to. The parent, when it is in on it, is seat p.
 
     /tmp/icc-patch-XXXXXXXX/patch    SHAPE N LANES, then one line per end
     /tmp/icc-patch-XXXXXXXX/made     SCRIPTS DIR per pipe and fitting, in order
@@ -33,20 +34,20 @@ is missing, create makes nothing.
 
 ## Shapes
 
-    ring      seats i and i+1 share a pipe, i on side 0, i+1 on side 1,
-              around the end back to 0
-    mesh      every two seats share a pipe, the lower seat on side 0
-    tee-ring  seat i writes one end; a tee carries it to seat i+1 and
-              back to seat i. Seat i reads one end; a merge brings it
-              what seats i-1 and i wrote
-    tee-mesh  seat i writes one end; a tee carries it to every seat,
-              seat i too. Seat i reads one end; a merge brings it what
-              every seat wrote
+    ring     seat i shares a pipe with seat i+1, i on side 0, i+1 on
+             side 1, around the end back to 0
+    mesh     a merge and a tee in the middle. Every seat writes one end
+             into the merge; the tee hands what comes out to every
+             seat's read end, the writer's too
+    ring-p   ring, and each hop is a tee: one outlet to the next seat,
+             one to a merge that seat p reads. p hears every hop and
+             holds no write end
+    mesh-p   mesh, with seat p on it like any other
 
-Fewer seats, fewer cables, by the shape alone. A writer with one reader
-gets no tee, a reader with one writer no merge, and one of each is a
-pipe. ring 2 is one pipe. ring 1 is one pipe with seat 0 on both ends.
-mesh 1 is no pipe. tee-ring 1 is ring 1.
+N counts seats other than p. Fewer seats, fewer cables, by the shape
+alone: a fitting with one end on a side is no fitting. mesh 2 is one
+pipe, and so is mesh-p 1, one seat with its parent. ring 2 is mesh 2.
+ring 1 is one pipe with seat 0 on both ends. mesh 1 is no pipe.
 
 ## The map
 
@@ -57,38 +58,37 @@ After the first line, one line per end a seat holds:
 Seat SEAT holds side SIDE of the pipe at DIR. PEERS is the seats on the
 other side, comma separated. Pipes says what a side writes and reads.
 
-- On a pipe two seats share, ring and mesh, what SEAT writes there
-  reaches PEERS and what it reads there came from PEERS. Both ways.
-- Through fittings, tee-ring and tee-mesh, an end goes one way. The
-  write end, side 0, sends to PEERS and reads nothing. The read end,
-  side 1, receives from PEERS and sends nowhere. Tee's and Merge's
-  SKILL.md say why.
+- On a pipe two seats share, what SEAT writes there reaches PEERS and
+  what it reads there came from PEERS. Both ways.
+- Through fittings, an end goes one way. A write end, side 0, sends to
+  PEERS and reads nothing. A read end, side 1, receives from PEERS and
+  sends nowhere. Tee's and Merge's SKILL.md say why.
 
     grep '^3 ' "$x/patch"                          every end seat 3 holds
 
     x=$(scripts/create mesh 4 6)
-    e=$(awk '$1==0 && $2==0 && $4==2 {print $3}' "$x/patch")
-    .../icc-frames/scripts/write "$e" 0 < photo.jpg          # seat 0 to 2
-    e=$(awk '$1==2 && $2==1 && $4==0 {print $3}' "$x/patch")
-    timeout 5 .../icc-frames/scripts/read "$e" 1 > photo.jpg  # seat 2 from 0
+    e=$(awk '$1==0 && $2==0 {print $3}' "$x/patch")  # seat 0's write end
+    .../icc-frames/scripts/write "$e" 0 < photo.jpg
+    e=$(awk '$1==2 && $2==1 {print $3}' "$x/patch")  # seat 2's read end
+    timeout 5 .../icc-frames/scripts/read "$e" 1 > photo.jpg
 
 ## Facts
 
 - A patch is the sum of its parts. Every fact in Pipes' SKILL.md holds
   for every end, and every fact in Tee's and Merge's for every copy. The
   bay adds nothing to them.
-- On a read end that merges, nothing says which PEER a byte came from,
-  and two writing at once interleave, as Merge says. Whose turn it is,
-  is agreed above this skill.
+- On a mesh, and on p's end of a ring-p, nothing says which PEER a byte
+  came from, and two writing at once interleave, as Merge says. Whose
+  turn it is, is agreed above this skill.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. Tee's and
   Merge's SKILL.md have the numbers.
 - A seat may sit in more than one patch. A ring and a mesh over the same
   seats is two patches.
-- list says up when every pipe and tee says up. If one is down, the
+- list says up when every pipe and fitting says up. If one is down, the
   patch is down; remove it and create it again.
-- Nothing holds a patch open. Its pipes and tees do their own holding.
-  Remove one of them by hand and list says down.
+- Nothing holds a patch open. Its pipes and fittings do their own
+  holding. Remove one of them by hand and list says down.
 
 ## In Claude Code
 
