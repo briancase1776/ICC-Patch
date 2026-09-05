@@ -1,9 +1,10 @@
 #!/bin/sh
 # tests/run.sh
 # Prove the bay: make each shape, see the map name the cables the shape says
-# and no more, push a Frames payload bigger than one lane holds from a seat
-# to its peers and read it back whole at every one, plain bytes back the
-# other way, remove it, see nothing left.
+# and no more, and the merge behind each write end that feeds one, push a
+# Frames payload bigger than one lane holds from a seat to its peers and
+# read it back whole at every one, plain bytes back the other way, remove
+# it, see nothing left.
 # Copyright (c) 2026 Brian Case. All rights reserved.
 # AI contributor: Claude (Anthropic)
 #
@@ -16,6 +17,8 @@ S=.claude/skills/icc-patch/scripts
 end() { awk -v s="$1" -v i="$2" -v p="$3" \
   '$1==s && $2==i && ("," $4 ",") ~ ("," p ",") {print $3}' "$x/patch"; }
 made() { [ "$(grep -c "$1" "$x/made")" -eq "$2" ]; }
+feeds() { awk -v s="$1" '$1==s && $2==0 {print $5}' "$x/patch"; }
+themerge() { awk '$1 ~ /icc-merge/ {print $2}' "$x/made"; }
 "$S/create" 2>/dev/null && exit 1
 "$S/create" star 3 2>/dev/null && exit 1
 "$S/create" ring 0 2>/dev/null && exit 1
@@ -26,6 +29,7 @@ trap 'for x in /tmp/icc-patch-*; do "$S/remove" "$x" 2>/dev/null || :; done; rm 
 x=$("$S/create" ring 3 6)
 "$S/list" | grep -qx "$x up ring 3 6"
 made icc-pipes 3; made icc-tee 0; made icc-merge 0
+[ -z "$(awk 'NF > 4' "$x/patch")" ]
 "$F/write" "$(end 2 0 0)" 0 < in
 timeout 5 "$F/read" "$(end 0 1 2)" 1 > out; cmp in out
 "$F/write" "$(end 0 1 2)" 1 < in
@@ -40,6 +44,8 @@ x=$("$S/create" mesh 4 6)
 "$S/list" | grep -qx "$x up mesh 4 6"
 made icc-pipes 9; made icc-tee 1; made icc-merge 1
 [ "$(grep -c '^3 ' "$x/patch")" -eq 2 ]
+g=$(themerge); for s in 0 1 2 3; do [ "$(feeds $s)" = "$g" ]; done
+[ -z "$(awk '$2 == 1 && NF > 4' "$x/patch")" ]
 "$F/write" "$(end 1 0 3)" 0 < in
 for r in 0 1 2 3; do timeout 5 "$F/read" "$(end $r 1 1)" 1 > out; cmp in out; done
 printf 'a' > "$(end 0 0 2)/2"; printf 'b' > "$(end 2 0 0)/2"
@@ -52,11 +58,13 @@ printf 'hi' > "$(end p 0 0)/0"; [ "$(timeout 1 cat "$(end 0 1 p)/0")" = hi ]
 printf 'yo' > "$(end 0 1 p)/1"; [ "$(timeout 1 cat "$(end p 0 0)/1")" = yo ]
 "$S/remove" "$x"
 x=$("$S/create" mesh-p 2); made icc-pipes 7; made icc-tee 1; made icc-merge 1
+[ "$(feeds p)" = "$(themerge)" ]
 printf 'all' > "$(end p 0 1)/0"
 for r in 0 1 p; do [ "$(timeout 1 cat "$(end $r 1 p)/0")" = all ]; done
 "$S/remove" "$x"
 x=$("$S/create" ring-p 3 6)
 made icc-pipes 11; made icc-tee 4; made icc-merge 1
+g=$(themerge); for s in 0 1 2; do [ "$(feeds $s)" = "$g" ]; done; [ -z "$(feeds p)" ]
 "$F/write" "$(end 1 0 2)" 0 < in
 timeout 5 "$F/read" "$(end 2 1 1)" 1 > out; cmp in out
 timeout 5 "$F/read" "$(end p 1 1)" 1 > out; cmp in out
@@ -67,6 +75,7 @@ m=$(cut -d' ' -f2 "$x/made")
 "$S/remove" "$x"; [ ! -d "$x" ]
 for p in $m; do [ ! -e "$p" ]; done
 x=$("$S/create" ring-p 1); made icc-pipes 3; made icc-tee 1; made icc-merge 0
+[ -z "$(awk 'NF > 4' "$x/patch")" ]
 printf 'hi' > "$(end p 0 0)/0"; [ "$(timeout 1 cat "$(end 0 1 p)/0")" = hi ]
 "$S/remove" "$x"
 [ -z "$("$S/list")" ]
