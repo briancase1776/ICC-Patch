@@ -40,8 +40,8 @@ is missing, create makes nothing.
              into the merge; the tee hands what comes out to every
              seat's read end, the writer's too
     ring-p   ring, and each hop is a tee: one outlet to the next seat,
-             one to a merge that seat p reads. p hears every hop and
-             holds no write end
+             one to a merge that seat p reads. p writes one end, and a
+             tee hands it to every seat's read end
     mesh-p   mesh, with seat p on it like any other
 
 N counts seats other than p. Fewer seats, fewer cables, by the shape
@@ -77,9 +77,9 @@ other side, comma separated. Pipes says what a side writes and reads.
 - A patch is the sum of its parts. Every fact in Pipes' SKILL.md holds
   for every end, and every fact in Tee's and Merge's for every copy. The
   bay adds nothing to them.
-- On a mesh, and on p's end of a ring-p, nothing says which PEER a byte
-  came from, and two writing at once interleave, as Merge says. Whose
-  turn it is, is agreed above this skill.
+- On a read end with more than one PEER, nothing says which one a byte
+  came from, and two writing at once interleave, as Pipes and Merge say.
+  Whose turn it is, is agreed above this skill.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. Tee's and
   Merge's SKILL.md have the numbers.

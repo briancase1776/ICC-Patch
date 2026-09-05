@@ -51,15 +51,18 @@ printf 'all' > "$(end p 0 1)/0"
 for r in 0 1 p; do [ "$(timeout 1 cat "$(end $r 1 p)/0")" = all ]; done
 "$S/remove" "$x"
 x=$("$S/create" ring-p 3 6)
-made icc-pipes 10; made icc-tee 3; made icc-merge 1
+made icc-pipes 11; made icc-tee 4; made icc-merge 1
 "$F/write" "$(end 1 0 2)" 0 < in
 timeout 5 "$F/read" "$(end 2 1 1)" 1 > out; cmp in out
 timeout 5 "$F/read" "$(end p 1 1)" 1 > out; cmp in out
-[ -z "$(end 0 1 1)" ] && [ -z "$(grep '^p 0 ' "$x/patch")" ]
+[ -z "$(end 0 1 1)" ]
+printf 'all' > "$(end p 0 1)/2"
+for r in 0 1 2; do [ "$(timeout 1 cat "$(end $r 1 p)/2")" = all ]; done
 m=$(cut -d' ' -f2 "$x/made")
 "$S/remove" "$x"; [ ! -d "$x" ]
 for p in $m; do [ ! -e "$p" ]; done
 x=$("$S/create" ring-p 1); made icc-pipes 3; made icc-tee 1; made icc-merge 0
+printf 'hi' > "$(end p 0 0)/0"; [ "$(timeout 1 cat "$(end 0 1 p)/0")" = hi ]
 "$S/remove" "$x"
 [ -z "$("$S/list")" ]
 rm -f in out

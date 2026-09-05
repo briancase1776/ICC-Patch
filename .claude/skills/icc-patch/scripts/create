@@ -36,13 +36,14 @@ case $shape in
            end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
          merge "$b" 0 $ins; tee "$b" 0 $outs ;; esac ;;
   ring-p)
-    xs=
+    xs=; rs=
     for i in $all; do j=$(( (i + 1) % n ))
-      w=$(pipe); r=$(pipe); x=$(pipe); xs="$xs $x"
-      end "$i" 0 "$w" "$j p"; end "$j" 1 "$r" "$i"; tee "$w" 0 "$r" "$x"
+      w=$(pipe); r=$(pipe); x=$(pipe); xs="$xs $x"; rs="$rs $r"
+      end "$i" 0 "$w" "$j p"; end "$j" 1 "$r" "$i p"; tee "$w" 0 "$r" "$x"
     done
-    q=$x; [ "$n" -eq 1 ] || { q=$(pipe); merge "$q" 0 $xs; }
-    end p 1 "$q" "$all" ;;
+    q=$x; v=$r
+    [ "$n" -eq 1 ] || { q=$(pipe); merge "$q" 0 $xs; v=$(pipe); tee "$v" 0 $rs; }
+    end p 1 "$q" "$all"; end p 0 "$v" "$all" ;;
 esac
 trap - EXIT
 echo "$d"
