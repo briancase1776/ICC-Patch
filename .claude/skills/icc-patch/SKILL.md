@@ -17,6 +17,7 @@ whose desk a cable runs to. The parent, when it is in on it, is seat p.
 
     /tmp/icc-patch-XXXXXXXX/patch    SHAPE N LANES, then one line per end
     /tmp/icc-patch-XXXXXXXX/made     SCRIPTS DIR per pipe and fitting, in order
+    /tmp/icc-patch-XXXXXXXX/lock     while a seat holds the wire; see Facts
 
 ## Operations
 
@@ -54,15 +55,9 @@ ring 1 is one pipe with seat 0 on both ends. mesh 1 is no pipe.
 After the first line, one line per end a seat holds:
 
     SEAT SIDE DIR PEERS
-    SEAT 0 DIR PEERS MERGE    a write end whose bytes go into a merge
 
 Seat SEAT holds side SIDE of the pipe at DIR. PEERS is the seats on the
 other side, comma separated. Pipes says what a side writes and reads.
-MERGE is the directory of the merge the bytes land in: every write end
-on a mesh, and every seat's on a ring-p, where the merge is what p reads.
-Merge's SKILL.md says what a writer into a merge can do with its
-directory. p's write end on a ring-p goes through a tee alone and has no
-MERGE.
 
 - On a pipe two seats share, what SEAT writes there reaches PEERS and
   what it reads there came from PEERS. Both ways.
@@ -85,9 +80,15 @@ MERGE.
   bay adds nothing to them.
 - On a read end with more than one PEER, nothing says which one a byte
   came from, and two writing at once interleave, as Pipes, Tee and Merge
-  say. Where the writers meet in a merge, their write ends name it, and
-  Merge's SKILL.md says how one of them takes the outlet for itself.
-  Whose turn it is, is agreed above this skill.
+  say. Whose turn it is, is agreed above this skill.
+- On a mesh or a ring-p every write meets every other write somewhere,
+  so the patch has one lock: `DIR/lock`, in the patch's directory. A seat
+  that wants the wire to itself makes it with mkdir(1) before it writes
+  and removes it with rmdir(1) after. mkdir is atomic: of two that try
+  at once, one gets it and the other fails. Nothing here looks at it;
+  remove deletes it with the rest. What the write left on the wire, as
+  Tee and Merge say, is still moving when it returns; the lock does not
+  wait for that. A ring has no fittings and nothing to lock.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. Tee's and
   Merge's SKILL.md have the numbers.
