@@ -1,8 +1,13 @@
 #!/bin/sh
+# tests/run.sh
 # Prove the bay: make each shape, see the map name the cables the shape says
 # and no more, push a Frames payload bigger than one lane holds from a seat
 # to its peers and read it back whole at every one, plain bytes back the
 # other way, remove it, see nothing left.
+# Copyright (c) 2026 Brian Case. All rights reserved.
+# AI contributor: Claude (Anthropic)
+#
+# MIT License text omitted for brevity, see LICENSE
 set -eu
 cd "$(dirname "$0")/.."
 P=${ICC_PIPES:-../ICC-Pipes}/.claude/skills/icc-pipes/scripts

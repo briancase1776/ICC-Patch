@@ -1,8 +1,13 @@
 #!/bin/sh
+# .claude/skills/icc-patch/scripts/create
 # create SHAPE N [LANES]: make the pipes, tees and merges SHAPE needs over N
 # seats, LANES lanes each (even, default 2), write the map, print the patch's
 # directory. The pieces come from icc-pipes, icc-tee and icc-merge, found in
 # sibling checkouts; the bay makes nothing but the map.
+# Copyright (c) 2026 Brian Case. All rights reserved.
+# AI contributor: Claude (Anthropic)
+#
+# MIT License text omitted for brevity, see LICENSE
 set -eu
 [ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
 shape=$1; n=$2; lanes=${3:-2}

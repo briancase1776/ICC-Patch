@@ -1,6 +1,11 @@
 #!/bin/sh
+# .claude/skills/icc-patch/scripts/remove
 # remove DIR: remove the fittings, then the pipes, in the reverse of the order
 # create made them, then delete DIR. DIR is what create printed.
+# Copyright (c) 2026 Brian Case. All rights reserved.
+# AI contributor: Claude (Anthropic)
+#
+# MIT License text omitted for brevity, see LICENSE
 set -eu
 d=${1:?usage: remove DIR}
 [ -f "$d/patch" ] && [ -f "$d/made" ] || { echo "not a patch: $d" >&2; exit 1; }

@@ -1,6 +1,11 @@
 #!/bin/sh
+# .claude/skills/icc-patch/scripts/list
 # list: one line per patch, "DIR up|down SHAPE N LANES".
 # Up means every pipe and fitting in it says up.
+# Copyright (c) 2026 Brian Case. All rights reserved.
+# AI contributor: Claude (Anthropic)
+#
+# MIT License text omitted for brevity, see LICENSE
 for d in /tmp/icc-patch-*/; do
   [ -d "$d" ] || continue
   d=${d%/}; s=up
