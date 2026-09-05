@@ -7,7 +7,7 @@
 # Copyright (c) 2026 Brian Case. All rights reserved.
 # AI contributor: Claude (Anthropic)
 #
-# MIT License text omitted for brevity, see LICENSE
+# MIT License text omitted for brevity, See LICENCE.TXT
 set -eu
 [ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
 shape=$1; n=$2; lanes=${3:-2}
