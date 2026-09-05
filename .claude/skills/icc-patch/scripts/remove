@@ -1,0 +1,8 @@
+#!/bin/sh
+# remove DIR: remove the tees, then the pipes, in the reverse of the order
+# create made them, then delete DIR. DIR is what create printed.
+set -eu
+d=${1:?usage: remove DIR}
+[ -f "$d/patch" ] && [ -f "$d/made" ] || { echo "not a patch: $d" >&2; exit 1; }
+sed '1!G;h;$!d' "$d/made" | while read -r sc p; do "$sc/remove" "$p" 2>/dev/null || :; done
+rm -rf "$d"

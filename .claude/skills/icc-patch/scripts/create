@@ -1,0 +1,45 @@
+#!/bin/sh
+# create SHAPE N [LANES]: make the pipes and tees SHAPE needs over N seats,
+# LANES lanes each (even, default 2), write the map, print the patch's
+# directory. The pipes come from icc-pipes and the tees from icc-tee, found
+# in sibling checkouts; the bay makes nothing but the map.
+set -eu
+[ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
+shape=$1; n=$2; lanes=${3:-2}
+case $shape in ring|mesh|tee-ring|tee-mesh) ;;
+  *) echo "shape is ring, mesh, tee-ring or tee-mesh" >&2; exit 1;; esac
+[ "$n" -ge 1 ] 2>/dev/null || { echo "seats must be 1 or more" >&2; exit 1; }
+top=$(cd "$(dirname "$0")/../../../.." && pwd)
+P=$(cd "${ICC_PIPES:-$top/../ICC-Pipes}/.claude/skills/icc-pipes/scripts" && pwd)
+T=$(cd "${ICC_TEE:-$top/../ICC-Tee}/.claude/skills/icc-tee/scripts" && pwd)
+d=$(mktemp -d /tmp/icc-patch-XXXXXXXX)
+echo "$shape $n $lanes" > "$d/patch"; : > "$d/made"
+trap '"$(dirname "$0")/remove" "$d"' EXIT
+pipe() { p=$("$P/create" "$lanes"); echo "$P $p" >> "$d/made"; echo "$p"; }
+end() { echo "$1 $2 $3 $4" >> "$d/patch"; }
+cable() {  # cable A B: one pipe, seat A on side 0, seat B on side 1
+  p=$(pipe); end "$1" 0 "$p" "$2"; end "$2" 1 "$p" "$1"
+}
+fan() {  # fan W R...: seat W writes one end and every seat R reads it
+  w=$1; shift
+  [ $# -gt 1 ] || { cable "$w" "$1"; return; }
+  in=$(pipe); outs=; peers=
+  for r; do o=$(pipe); end "$r" 1 "$o" "$w"; outs="$outs $o"; peers="$peers,$r"; done
+  end "$w" 0 "$in" "${peers#,}"
+  t=$("$T/create" "$in" 0 $outs); echo "$T $t" >> "$d/made"
+}
+all=; i=0; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
+m=$n; [ "$n" -eq 2 ] && m=1
+i=0
+while [ "$i" -lt "$n" ]; do
+  j=$(( (i + 1) % n ))
+  case $shape in
+    ring)     [ "$i" -lt "$m" ] && cable "$i" "$j" ;;
+    mesh)     k=$((i + 1)); while [ "$k" -lt "$n" ]; do cable "$i" "$k"; k=$((k + 1)); done ;;
+    tee-ring) [ "$j" -ne "$i" ] || j=; fan "$i" $j "$i" ;;
+    tee-mesh) fan "$i" $all ;;
+  esac
+  i=$((i + 1))
+done
+trap - EXIT
+echo "$d"

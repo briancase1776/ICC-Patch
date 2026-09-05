@@ -1,0 +1,11 @@
+#!/bin/sh
+# list: one line per patch, "DIR up|down SHAPE N LANES".
+# Up means every pipe and tee in it says up.
+for d in /tmp/icc-patch-*/; do
+  [ -d "$d" ] || continue
+  d=${d%/}; s=up
+  while read -r sc p; do
+    "$sc/list" | cut -d' ' -f1,2 | grep -qx "$p up" || s=down
+  done < "$d/made"
+  echo "$d $s $(sed -n 1p "$d/patch")"
+done
