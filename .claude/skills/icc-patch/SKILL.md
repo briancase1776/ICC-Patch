@@ -88,7 +88,11 @@ other side, comma separated. Pipes says what a side writes and reads.
   at once, one gets it and the other fails. Nothing here looks at it;
   remove deletes it with the rest. What the write left on the wire, as
   Tee and Merge say, is still moving when it returns; the lock does not
-  wait for that. A ring has no fittings and nothing to lock.
+  wait for that. On a mesh it is past the merge once its end is back at
+  the writer's own read end: the tee puts each chunk on every outlet
+  before it reads the next, as Tee says, so nothing written after it
+  can come before it at any seat. A ring has no fittings and nothing to
+  lock.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. Tee's and
   Merge's SKILL.md have the numbers.
