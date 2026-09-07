@@ -11,8 +11,8 @@
 set -eu
 [ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
 shape=$1; n=$2; lanes=${3:-2}
-case $shape in ring|mesh|ring-p|mesh-p) ;;
-  *) echo "shape is ring, mesh, ring-p or mesh-p" >&2; exit 1;; esac
+case $shape in star|ring|mesh|ring-p|mesh-p) ;;
+  *) echo "shape is star, ring, mesh, ring-p or mesh-p" >&2; exit 1;; esac
 [ "$n" -ge 1 ] 2>/dev/null || { echo "seats must be 1 or more" >&2; exit 1; }
 top=$(cd "$(dirname "$0")/../../../.." && pwd)
 P=$(cd "${ICC_PIPES:-$top/../ICC-Pipes}/.claude/skills/icc-pipes/scripts" && pwd)
@@ -30,6 +30,7 @@ cable() {  # cable A B: one pipe, seat A on side 0, seat B on side 1
 }
 all=0; i=1; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
 case $shape in
+  star) for i in $all; do cable "$i" p; done ;;
   ring)
     case $n in 1) cable 0 0 ;; 2) cable 0 1 ;;
       *) for i in $all; do cable "$i" $(( (i + 1) % n )); done ;; esac ;;

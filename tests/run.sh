@@ -18,12 +18,24 @@ end() { awk -v s="$1" -v i="$2" -v p="$3" \
   '$1==s && $2==i && ("," $4 ",") ~ ("," p ",") {print $3}' "$x/patch"; }
 made() { [ "$(grep -c "$1" "$x/made")" -eq "$2" ]; }
 "$S/create" 2>/dev/null && exit 1
-"$S/create" star 3 2>/dev/null && exit 1
+"$S/create" bus 3 2>/dev/null && exit 1
 "$S/create" ring 0 2>/dev/null && exit 1
 "$S/create" ring 3 3 2>/dev/null && exit 1
 [ -z "$("$S/list")" ]
 head -c 150000 /dev/urandom > in
 trap 'for x in /tmp/icc-patch-*; do "$S/remove" "$x" 2>/dev/null || :; done; rm -f in out' EXIT
+x=$("$S/create" star 3 6)
+"$S/list" | grep -qx "$x up star 3 6"
+made icc-pipes 3; made icc-tee 0; made icc-merge 0
+[ "$(grep -c '^p ' "$x/patch")" -eq 3 ]
+"$F/write" "$(end 1 0 p)" 0 < in
+timeout 5 "$F/read" "$(end p 1 1)" 1 > out; cmp in out
+"$F/write" "$(end p 1 2)" 1 < in
+timeout 5 "$F/read" "$(end 2 0 p)" 0 > out; cmp in out
+printf 'me' > "$(end 0 0 p)/0"; [ "$(timeout 1 cat "$(end p 1 0)/0")" = me ]
+[ -z "$(end 0 0 2)" ]; [ -z "$(end 0 1 p)" ]
+"$S/remove" "$x"; [ ! -d "$x" ]
+x=$("$S/create" star 1); made icc-pipes 1; "$S/remove" "$x"
 x=$("$S/create" ring 3 6)
 "$S/list" | grep -qx "$x up ring 3 6"
 made icc-pipes 3; made icc-tee 0; made icc-merge 0

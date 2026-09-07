@@ -1,11 +1,11 @@
 ---
 name: icc-patch
 description: >-
-  Patch icc-pipes pipes, icc-tee tees and icc-merge merges into a ring or
-  a mesh over N seats, with or without a parent in on it, and hand every
-  seat a map of the ends it holds. The bay makes nothing but the map.
-  What goes down the cables, and who sits where, is the caller's
-  business.
+  Patch icc-pipes pipes, icc-tee tees and icc-merge merges into a star,
+  a ring or a mesh over N seats, with or without a parent in on it, and
+  hand every seat a map of the ends it holds. The bay makes nothing but
+  the map. What goes down the cables, and who sits where, is the
+  caller's business.
 ---
 
 # icc-patch
@@ -35,6 +35,8 @@ is missing, create makes nothing.
 
 ## Shapes
 
+    star     seat i shares a pipe with seat p, i on side 0, p on side 1.
+             Nothing joins the seats to each other
     ring     seat i shares a pipe with seat i+1, i on side 0, i+1 on
              side 1, around the end back to 0
     mesh     a merge and a tee in the middle. Every seat writes one end
@@ -47,8 +49,9 @@ is missing, create makes nothing.
 
 N counts seats other than p. Fewer seats, fewer cables, by the shape
 alone: a fitting with one end on a side is no fitting. mesh 2 is one
-pipe, and so is mesh-p 1, one seat with its parent. ring 2 is mesh 2.
-ring 1 is one pipe with seat 0 on both ends. mesh 1 is no pipe.
+pipe, and so is mesh-p 1, one seat with its parent, and so is star 1.
+ring 2 is mesh 2. ring 1 is one pipe with seat 0 on both ends. mesh 1 is
+no pipe.
 
 ## The map
 
@@ -60,7 +63,9 @@ Seat SEAT holds side SIDE of the pipe at DIR. PEERS is the seats on the
 other side, comma separated. Pipes says what a side writes and reads.
 
 - On a pipe two seats share, what SEAT writes there reaches PEERS and
-  what it reads there came from PEERS. Both ways.
+  what it reads there came from PEERS. Both ways. On a star every end is
+  one of these, so p holds one end per seat and knows which seat it is
+  talking to.
 - Through fittings, an end goes one way. A write end, side 0, sends to
   PEERS and reads nothing. A read end, side 1, receives from PEERS and
   sends nowhere. Tee's and Merge's SKILL.md say why.
@@ -91,8 +96,8 @@ other side, comma separated. Pipes says what a side writes and reads.
   wait for that. On a mesh it is past the merge once its end is back at
   the writer's own read end: the tee puts each chunk on every outlet
   before it reads the next, as Tee says, so nothing written after it
-  can come before it at any seat. A ring has no fittings and nothing to
-  lock.
+  can come before it at any seat. A star and a ring have no fittings and
+  nothing to lock.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. Tee's and
   Merge's SKILL.md have the numbers.

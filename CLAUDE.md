@@ -28,13 +28,13 @@ which seat.
 - A **patch**: the pipes, tees and merges one shape needs over N seats,
   made by their own skills, and a **map** saying which end each seat
   holds and which seats are on the other side of it.
-- The shapes are ring and mesh, each with or without the parent in on
-  it. A mesh is a merge and a tee in the middle. A ring is a pipe from
-  each seat to the next; with the parent in, each hop is a tee, the
-  parent reads one merge of them all and writes one tee to them all.
-  Four shapes. Fewer seats means
-  fewer cables, by the shape alone: two seats on a mesh is one pipe, one
-  seat with its parent is one pipe.
+- The shapes are star, and ring and mesh each with or without the
+  parent in on it. A star is a pipe from each seat to the parent and
+  nothing between the seats. A mesh is a merge and a tee in the middle.
+  A ring is a pipe from each seat to the next; with the parent in, each
+  hop is a tee, the parent reads one merge of them all and writes one
+  tee to them all. Five shapes. Fewer seats means fewer cables, by the shape alone: two
+  seats on a mesh is one pipe, one seat with its parent is one pipe.
 - The skill covers creating, listing, and removing patches. Using one is
   reading the map and holding the ends it names. Nothing else.
 
