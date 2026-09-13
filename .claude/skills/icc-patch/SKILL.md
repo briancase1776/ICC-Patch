@@ -37,47 +37,45 @@ is missing, create makes nothing.
 Three shapes, and three ways the parent can stand to one.
 
     bare     the seats and nothing else
-    -p       p takes a place in the shape, and holds what a seat in that
-             place holds
-    -p-ro    the seats' cables are untouched, and every seat holds one
-             more write end, into a merge that p reads. p never writes
+    -p       p is in on it: it reads what the shape carries, and writes
+             into it
+    -p-ro    the same shape, and p only reads. It writes nowhere
 
-A suffix means the same thing on every shape it is spelled on. A star
-has no bare form: a star is nothing between the seats, so every cable in
-one is p's. That leaves eight.
+A suffix means the same thing on every shape it is spelled on. Handing p
+what the seats say means copying a lane, and a lane is copied by a tee,
+so a parented ring's hops are tees where a bare ring's are pipes. The
+fitting is the shape, not an expense. A star has no bare form, since a
+star is nothing between the seats and every cable in one is p's. That
+leaves eight.
 
     star-p     seat i shares a pipe with p, i on side 0, p on side 1.
                Nothing joins the seats to each other
-    star-p-ro  nothing joins the seats. Every seat writes to p
+    star-p-ro  nothing joins the seats. Every seat writes one end into a
+               merge, and p reads what comes out of it
     ring       seat i shares a pipe with seat i+1, i on side 0, i+1 on
                side 1, around the end back to 0
-    ring-p     the same ring, with p in it between seat N-1 and seat 0
-    ring-p-ro  the ring, and every seat writes to p as well
+    ring-p     ring, and each hop is a tee: one outlet to the next seat,
+               one to a merge that p reads. p writes one end, and a tee
+               hands it to a read end of its own at every seat, so a
+               seat holds three ends: its write end, a read end from the
+               seat before it, and a read end from p
+    ring-p-ro  the same hops and the same merge, and no tee from p, so a
+               seat holds two ends and p holds one
     mesh       a merge and a tee in the middle. Every seat writes one
                end into the merge; the tee hands what comes out to every
-               seat's read end, the writer's too. Where there is a tee:
-               mesh 2 collapses to one pipe and has none
+               seat's read end, the writer's too
     mesh-p     the same mesh, with p on it like any other seat
-    mesh-p-ro  the mesh among the seats, and every seat writes to p as
-               well
+    mesh-p-ro  the same mesh among the seats, and the middle tee hands p
+               an outlet of its own. p is on no inlet of the merge
 
-N counts seats other than p. Fewer seats, fewer cables, by the shape
-alone: a fitting with one end on a side is no fitting. mesh 2 is one
-pipe, and ring 2 is that same pipe. mesh 1 is no pipe. ring 1 is one
-pipe with seat 0 on both ends. On one seat every parented shape is the
-one pipe seat 0 shares with p, and ring-p-ro 1 is that pipe and ring 1's
-besides. Where a shape collapses to one pipe the two seats share it, and
-each writes and reads there: the lower numbered seat holds side 0 and
-the other side 1, p counting as the higher. ring 1 has no second seat:
-seat 0 holds both sides, and what it writes on one it reads on the
-other. On the rest a seat's own words do not come back to it, since
-there is no tee to hand them round.
-
-A -p-ro over one seat is the one place the name outruns the cables. One
-inlet is no merge, so p is left holding half of an ordinary pipe, and a
-pipe is two ways: nothing but the map stops p writing on it. From two
-seats up the merge is there and read only is the shape rather than the
-manners.
+N counts seats other than p. Fewer seats means fewer cables and never
+fewer fittings: a mesh is a merge and a tee over one seat as over forty,
+and a parented ring has a tee at every hop and a merge at p however few
+hops there are. Only a bare ring comes out smaller, having no fitting to
+keep: ring 2 is the one pipe seats 0 and 1 share, since the hop out and
+the hop back are the same two ways of it, and ring 1 is one pipe with
+seat 0 on both ends, what it writes on one side coming back on the
+other.
 
 ## The map
 
@@ -126,24 +124,27 @@ its DIR, not by its seat and side.
   came from, and two writing at once interleave, as Pipes, Tee and Merge
   say. Whose turn it is, is agreed above this skill.
 - Where writes meet is the merge: the one in the middle of a mesh, the
-  fan-in one p reads on any -p-ro. Two seats writing at once interleave
-  there, as Merge says, and nowhere else do two writers share a pipe.
-  star-p, ring and ring-p have no fittings and nothing to meet at.
+  one p reads on a parented ring or a star-p-ro. Two seats writing at
+  once interleave there, as Merge says, and nowhere else do two writers
+  share a pipe. star-p and a bare ring have no fittings and nothing to
+  meet at.
 - On a mesh the tee hands a writer its own words back, so a seat can see
   its own go past the merge: the tee puts each chunk on every outlet
   before it reads the next, as Tee says, so nothing written after them
-  can come before them at any seat. Nowhere else does a seat's own
-  writing come back to it, except ring 1, where the one seat holds both
-  ends of one pipe. A -p-ro adds no such moment: p reads and answers
-  nothing.
+  can come before them at any seat. On a parented ring nothing a seat
+  writes comes back to that seat, and nothing p writes comes back to p,
+  so there is no such moment — except over one seat, where the hop tee
+  goes round to the only seat there is. ring 1 is the other place a
+  seat hears itself: it holds both ends of one pipe. On a mesh-p-ro p
+  never hears its own, having written nothing.
 - Whose turn it is, and whatever the seats leave in DIR to agree it, is
   theirs; remove takes DIR whole.
 - Through fittings, a seat that never reads stalls every writer once its
   end fills. Read every end, or keep the payload inside one. How much
   that is, is how many pipes lie between a write end and a read end,
-  which only the bay knows: a star-p, a ring or a ring-p hop one, a
-  write to p through a fan-in two, a mesh of three or more three, and a
-  shape that collapsed to one pipe one. What one pipe holds is Pipes'
+  which only the bay knows: a star-p or a bare ring one, a star-p-ro or
+  a parented ring's hop two, a mesh three, and a seat's word on round a
+  parented ring to p three. What one pipe holds is Pipes'
   fact, and Tee's and Merge's SKILL.md say what a fitting adds. It is
   not one number: measured on a mesh, 208K, 224K and 256K each went both
   ways on different runs.

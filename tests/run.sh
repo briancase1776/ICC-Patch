@@ -66,13 +66,20 @@ for r in 0 1 2 3; do timeout 5 "$F/read" "$(at $r 1 1)" 1 > "$out"; cmp "$in" "$
 printf 'a' > "$(at 0 0 2)/2"; printf 'b' > "$(at 2 0 0)/2"
 case $(timeout 1 cat "$(at 3 1 0)/2") in ab|ba) ;; *) exit 1;; esac
 mkdir "$x/lock"; "$S/remove" "$x"; [ ! -d "$x" ]
-mk mesh 2; made icc-pipes 1; made icc-tee 0; ends 2
+mk mesh 2; made icc-pipes 5; made icc-tee 1; made icc-merge 1; ends 4
 mv "$x/made" "$x/gone"; "$S/list" | grep -qx "$x down mesh 2 2"
 mv "$x/gone" "$x/made"; "$S/remove" "$x"
-mk mesh 1; made icc-pipes 0; ends 0; "$S/remove" "$x"
-mk mesh-p 1; made icc-pipes 1; made icc-merge 0; ends 2
-printf 'hi' > "$(at 0 0 p)/0"; [ "$(timeout 1 cat "$(at p 1 0)/0")" = hi ]
-printf 'yo' > "$(at p 1 0)/1"; [ "$(timeout 1 cat "$(at 0 0 p)/1")" = yo ]
+mk mesh 1; made icc-pipes 3; made icc-tee 1; made icc-merge 1; ends 2
+printf 'me' > "$(at 0 0 0)/0"   # a mesh of one is a seat hearing itself
+[ "$(timeout 1 cat "$(at 0 1 0)/0")" = me ]
+"$S/remove" "$x"
+mk mesh-p 1; made icc-pipes 5; made icc-tee 1; made icc-merge 1; ends 4
+printf 'hi' > "$(at 0 0 p)/0"   # a mesh hands a writer its own words back,
+[ "$(timeout 1 cat "$(at p 1 0)/0")" = hi ]   # so both ends have them to read
+[ "$(timeout 1 cat "$(at 0 1 p)/0")" = hi ]
+printf 'yo' > "$(at p 0 0)/0"
+[ "$(timeout 1 cat "$(at 0 1 p)/0")" = yo ]
+[ "$(timeout 1 cat "$(at p 1 0)/0")" = yo ]
 "$S/remove" "$x"
 mk mesh-p 2; made icc-pipes 7; made icc-tee 1; made icc-merge 1; ends 6
 printf 'all' > "$(at p 0 1)/0"
@@ -80,42 +87,46 @@ for r in 0 1 p; do [ "$(timeout 1 cat "$(at $r 1 p)/0")" = all ]; done
 "$S/remove" "$x"
 mk ring-p 3 6
 "$S/list" | grep -qx "$x up ring-p 3 6"
-made icc-pipes 4; made icc-tee 0; made icc-merge 0; ends 8
-"$F/write" "$(at 2 0 p)" 0 < "$in"
-timeout 5 "$F/read" "$(at p 1 2)" 1 > "$out"; cmp "$in" "$out"
-"$F/write" "$(at p 0 0)" 0 < "$in"
-timeout 5 "$F/read" "$(at 0 1 p)" 1 > "$out"; cmp "$in" "$out"
-printf 'back' > "$(at 1 1 0)/1"   # a hop is a pipe: p in it changed no seat's
-[ "$(timeout 1 cat "$(at 0 0 1)/1")" = back ]
-[ -z "$(end 0 0 2)" ]; [ -z "$(end 0 1 2)" ]
+made icc-pipes 14; made icc-tee 4; made icc-merge 1; ends 11
+[ "$(end 1 1 0)" != "$(end 1 1 p)" ]
+"$F/write" "$(at 1 0 2)" 0 < "$in"    # one write, on to the next seat and to p
+timeout 5 "$F/read" "$(at 2 1 1)" 1 > "$out"; cmp "$in" "$out"
+timeout 5 "$F/read" "$(at p 1 1)" 1 > "$out"; cmp "$in" "$out"
+[ -z "$(end 0 1 1)" ]
+printf 'all' > "$(at p 0 1)/2"        # and p's own tee reaches every seat
+for r in 0 1 2; do [ "$(timeout 1 cat "$(at $r 1 p)/2")" = all ]; done
 m=$(cut -d' ' -f2 "$x/made")
 "$S/remove" "$x"; [ ! -d "$x" ]
 for q in $m; do [ ! -e "$q" ]; done
-mk ring-p 1; made icc-pipes 1; made icc-tee 0; ends 2
-printf 'hi' > "$(at 0 0 p)/0"; [ "$(timeout 1 cat "$(at p 1 0)/0")" = hi ]
+mk ring-p 1; made icc-pipes 6; made icc-tee 2; made icc-merge 1; ends 5
+printf 'hi' > "$(at p 0 0)/0"; [ "$(timeout 1 cat "$(at 0 1 p)/0")" = hi ]
+"$S/remove" "$x"
+mk ring-p-ro 3 6
+"$S/list" | grep -qx "$x up ring-p-ro 3 6"
+made icc-pipes 10; made icc-tee 3; made icc-merge 1; ends 7
+"$F/write" "$(at 1 0 2)" 0 < "$in"
+timeout 5 "$F/read" "$(at 2 1 1)" 1 > "$out"; cmp "$in" "$out"
+timeout 5 "$F/read" "$(at p 1 1)" 1 > "$out"; cmp "$in" "$out"
+[ -z "$(end p 0 1)" ]                 # and p has no end to write on
+"$S/remove" "$x"
+mk ring-p-ro 1; made icc-pipes 4; made icc-tee 1; made icc-merge 1; ends 3
 "$S/remove" "$x"
 mk star-p-ro 3 6
 "$S/list" | grep -qx "$x up star-p-ro 3 6"
 made icc-pipes 4; made icc-tee 0; made icc-merge 1; ends 4
 "$F/write" "$(at 1 0 p)" 0 < "$in"
 timeout 5 "$F/read" "$(at p 1 1)" 1 > "$out"; cmp "$in" "$out"
-[ -z "$(end p 0 1)" ]; [ -z "$(end 0 0 1)" ]   # p never writes, seats unjoined
+printf 'a' > "$(at 0 0 p)/0"; printf 'b' > "$(at 2 0 p)/0"
+case $(timeout 1 cat "$(at p 1 0)/0") in ab|ba) ;; *) exit 1;; esac
+[ -z "$(end p 0 1)" ]; [ -z "$(end 0 0 1)" ]
 "$S/remove" "$x"
-mk star-p-ro 1; made icc-pipes 1; made icc-merge 0; ends 2; "$S/remove" "$x"
-mk ring-p-ro 3 6
-made icc-pipes 7; made icc-tee 0; made icc-merge 1; ends 10
-"$F/write" "$(at 0 0 1)" 0 < "$in"                 # the ring is left alone
-timeout 5 "$F/read" "$(at 1 1 0)" 1 > "$out"; cmp "$in" "$out"
-"$F/write" "$(at 2 0 p)" 0 < "$in"                 # and every seat writes to p
-timeout 5 "$F/read" "$(at p 1 2)" 1 > "$out"; cmp "$in" "$out"
-[ -z "$(end p 0 2)" ]
-"$S/remove" "$x"
+mk star-p-ro 1; made icc-pipes 2; made icc-merge 1; ends 2; "$S/remove" "$x"
 mk mesh-p-ro 3 6
-made icc-pipes 11; made icc-tee 1; made icc-merge 2; ends 10
-"$F/write" "$(at 0 0 p)" 0 < "$in"
+made icc-pipes 8; made icc-tee 1; made icc-merge 1; ends 7
+"$F/write" "$(at 0 0 p)" 0 < "$in"    # the seats still hear each other, and
+for r in 0 1 2; do                    # p hears them without being on the merge
+  timeout 5 "$F/read" "$(at $r 1 1)" 1 > "$out"; cmp "$in" "$out"; done
 timeout 5 "$F/read" "$(at p 1 0)" 1 > "$out"; cmp "$in" "$out"
-printf 'bus' > "$(at 1 0 2)/0"                     # the mesh is left alone
-for r in 0 1 2; do [ "$(timeout 1 cat "$(at $r 1 1)/0")" = bus ]; done
 [ -z "$(end p 0 0)" ]
 "$S/remove" "$x"
 mk star-p 1 2; e=$(at 0 0 p); h=$(holder "$e"); [ -n "$h" ]

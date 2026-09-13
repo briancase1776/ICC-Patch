@@ -56,12 +56,14 @@ cable() {  # cable A B: one pipe, seat A on side 0, seat B on side 1
   pipe; end "$1" 0 "$p" "$2"; end "$2" 1 "$p" "$1"
 }
 # Three shapes, and three ways p can stand to one. A bare shape is the seats
-# and nothing else. -p puts p in a place in the shape, holding what a seat in
-# that place holds, so it is the same construction with one more taking part.
-# -p-ro leaves the seats' cables alone and adds a fan-in: one write end each
-# into a merge, and p on the read end of it. A star has no bare form — a star
-# is nothing between the seats, so every cable in one is p's — which is why
-# the star column is the two parented shapes and no more.
+# and nothing else. -p is p in on it, reading what the shape carries and
+# writing into it. -p-ro is the same shape with p only reading. A star has no
+# bare form — a star is nothing between the seats, so every cable in one is
+# p's — which is why the star column is the two parented shapes and no more.
+# Handing p what the seats say means copying a lane, and a lane is copied by a
+# tee, so a parented ring's hops are tees where a bare ring's are pipes. The
+# fitting is the shape, not an expense: where p must not write, a merge or a
+# tee is what makes that so, and half of an ordinary pipe is not.
 ringof() { case $# in       # each taking part shares a pipe with the next
     1) cable "$1" "$1" ;;
     2) cable "$1" "$2" ;;
@@ -69,30 +71,44 @@ ringof() { case $# in       # each taking part shares a pipe with the next
        for s; do cable "$a" "$s"; a=$s; done
        cable "$a" "$f" ;;
   esac }
-busof() { case $# in        # a merge and a tee in the middle, everyone on both
-    1) ;;
-    2) cable "$1" "$2" ;;
-    *) pipe; b=$p; ins=; outs=
-       for s; do pipe; w=$p; pipe; r=$p; ins="$ins $w"; outs="$outs $r"
-         end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
-       merge "$b" 0 $ins; tee "$b" 0 $outs ;;
-  esac }
+busof() {                   # a merge and a tee in the middle, everyone on both
+  pipe; b=$p; ins=; outs=
+  for s; do pipe; w=$p; pipe; r=$p; ins="$ins $w"; outs="$outs $r"
+    end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
+  merge "$b" 0 $ins; tee "$b" 0 $outs
+}
 fanin() {                   # every seat writes to p, and p only reads
-  [ "$n" -gt 1 ] || { cable 0 p; return; }   # one inlet is no merge
   ins=
   for i in $all; do pipe; w=$p; ins="$ins $w"; end "$i" 0 "$w" p; done
   pipe; b=$p; merge "$b" 0 $ins; end p 1 "$b" "$all"
+}
+hops() {                    # hops RW: each hop a tee, one outlet on to the
+  xs=; rs=                  # next seat and one to the merge p reads. RW=y
+  for i in $all; do         # gives p a tee to a read end at every seat too
+    j=$(( (i + 1) % n ))
+    pipe; w=$p; pipe; r=$p; pipe; x=$p; xs="$xs $x"
+    end "$i" 0 "$w" "$j p"; end "$j" 1 "$r" "$i"
+    [ "$1" != y ] || { pipe; y=$p; rs="$rs $y"; end "$i" 1 "$y" p; }
+    tee "$w" 0 "$r" "$x"
+  done
+  pipe; q=$p; merge "$q" 0 $xs; end p 1 "$q" "$all"
+  [ "$1" != y ] || { pipe; v=$p; tee "$v" 0 $rs; end p 0 "$v" "$all"; }
 }
 all=0; i=1; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
 case $shape in
   star-p)    for i in $all; do cable "$i" p; done; built=y ;;
   star-p-ro) fanin; built=y ;;
   ring)      ringof $all; built=y ;;
-  ring-p)    ringof $all p; built=y ;;
-  ring-p-ro) ringof $all; fanin; built=y ;;
+  ring-p)    hops y; built=y ;;
+  ring-p-ro) hops n; built=y ;;
   mesh)      busof $all; built=y ;;
   mesh-p)    busof $all p; built=y ;;
-  mesh-p-ro) busof $all; fanin; built=y ;;
+  mesh-p-ro) pipe; b=$p; ins=; outs=
+             for i in $all; do pipe; w=$p; pipe; r=$p
+               ins="$ins $w"; outs="$outs $r"
+               end "$i" 0 "$w" "$all p"; end "$i" 1 "$r" "$all"; done
+             pipe; o=$p; end p 1 "$o" "$all"
+             merge "$b" 0 $ins; tee "$b" 0 $outs "$o"; built=y ;;
 esac
 # An error inside $(( )) is not a command failure, so set -e does not stop it:
 # bash abandons the case and lands here. Without this line, "here" is where

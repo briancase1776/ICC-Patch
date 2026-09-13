@@ -29,16 +29,19 @@ which seat.
   made by their own skills, and a **map** saying which end each seat
   holds and which seats are on the other side of it.
 - The shapes are star, ring and mesh, and the parent stands to one of
-  them three ways. Bare is the seats and nothing else. `-p` puts p in a
-  place in the shape, holding what a seat in that place holds. `-p-ro`
-  leaves the seats' cables untouched and gives every seat one more write
-  end, into a merge that p reads; p never writes. A star has no bare
-  form, since a star is nothing between the seats and every cable in one
-  is p's. Eight shapes. A suffix means the same thing on every shape it
-  is spelled on: a caller that needs something else gets a shape of its
-  own, never a re-cut of an existing one. Fewer seats means fewer
-  cables, by the shape alone: two seats on a mesh is one pipe, one seat
-  with its parent is one pipe.
+  them three ways. Bare is the seats and nothing else. `-p` is p in on
+  it, reading what the shape carries and writing into it. `-p-ro` is the
+  same shape with p only reading. A star has no bare form, since a star
+  is nothing between the seats and every cable in one is p's. Eight
+  shapes. A suffix means the same thing on every shape it is spelled on:
+  a caller that needs something else gets a shape of its own, never a
+  re-cut of an existing one.
+- The shape says which fittings, and nothing trades one away. Handing p
+  what the seats say means copying a lane, and a lane is copied by a
+  tee, so a parented ring's hops are tees where a bare ring's are pipes,
+  and a mesh is a merge and a tee over one seat as over forty. Fewer
+  seats means fewer cables, never fewer fittings. Half of an ordinary
+  pipe is not a read only end, and two seats on one pipe is not a mesh.
 - The skill covers creating, listing, and removing patches. Using one is
   reading the map and holding the ends it names. Nothing else.
 - The bay is the easy path for the common shapes, not the only path.
@@ -116,7 +119,9 @@ repo guarantees anything under.
   tell a seat when to write, how to wait, or what to do with what it
   reads.
 - **The shape decides the cables.** Nothing else does. No knob picks a
-  fitting over a pipe; a fitting with one end on a side is no fitting.
+  fitting over a pipe, and no seat count does either: the pieces are
+  written and tested, so a shape that calls for a tee gets a tee at
+  every size it is made at.
 - **Never look at the bytes.** No script in the skill reads a lane:
   not create, not list, not remove. The harness does, because proving
   the bay works means pushing a payload through it.
