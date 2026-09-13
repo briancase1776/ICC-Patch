@@ -25,14 +25,15 @@ holder() { for f in /proc/[0-9]*/fd/*; do
 done; }
 "$S/create" 2>/dev/null && exit 1
 "$S/create" bus 3 2>/dev/null && exit 1
+"$S/create" star 3 2>/dev/null && exit 1
 "$S/create" ring 0 2>/dev/null && exit 1
 "$S/create" ring 3 3 2>/dev/null && exit 1
 "$S/create" mesh 1 banana 2>/dev/null && exit 1
 mine=; w=$(mktemp -d); in=$w/in; out=$w/out
 head -c 150000 /dev/urandom > "$in"
 trap 'for q in $mine; do "$S/remove" "$q" 2>/dev/null || :; done; rm -rf "$w"' EXIT
-mk star 3 6
-"$S/list" | grep -qx "$x up star 3 6"
+mk star-p 3 6
+"$S/list" | grep -qx "$x up star-p 3 6"
 made icc-pipes 3; made icc-tee 0; made icc-merge 0; ends 6
 [ "$(grep -c '^p ' "$x/patch")" -eq 3 ]
 "$F/write" "$(at 1 0 p)" 0 < "$in"
@@ -42,7 +43,7 @@ timeout 5 "$F/read" "$(at 2 0 p)" 0 > "$out"; cmp "$in" "$out"
 printf 'me' > "$(at 0 0 p)/0"; [ "$(timeout 1 cat "$(at p 1 0)/0")" = me ]
 [ -z "$(end 0 0 2)" ]; [ -z "$(end 0 1 p)" ]
 "$S/remove" "$x"; [ ! -d "$x" ]
-mk star 1; made icc-pipes 1; ends 2; "$S/remove" "$x"
+mk star-p 1; made icc-pipes 1; ends 2; "$S/remove" "$x"
 mk ring 3 6
 "$S/list" | grep -qx "$x up ring 3 6"
 made icc-pipes 3; made icc-tee 0; made icc-merge 0; ends 6
@@ -78,24 +79,49 @@ printf 'all' > "$(at p 0 1)/0"
 for r in 0 1 p; do [ "$(timeout 1 cat "$(at $r 1 p)/0")" = all ]; done
 "$S/remove" "$x"
 mk ring-p 3 6
-made icc-pipes 14; made icc-tee 4; made icc-merge 1; ends 11
-[ "$(end 1 1 0)" != "$(end 1 1 p)" ]
-"$F/write" "$(at 1 0 2)" 0 < "$in"
-timeout 5 "$F/read" "$(at 2 1 1)" 1 > "$out"; cmp "$in" "$out"
-timeout 5 "$F/read" "$(at p 1 1)" 1 > "$out"; cmp "$in" "$out"
-[ -z "$(end 0 1 1)" ]
-printf 'all' > "$(at p 0 1)/2"
-for r in 0 1 2; do [ "$(timeout 1 cat "$(at $r 1 p)/2")" = all ]; done
+"$S/list" | grep -qx "$x up ring-p 3 6"
+made icc-pipes 4; made icc-tee 0; made icc-merge 0; ends 8
+"$F/write" "$(at 2 0 p)" 0 < "$in"
+timeout 5 "$F/read" "$(at p 1 2)" 1 > "$out"; cmp "$in" "$out"
+"$F/write" "$(at p 0 0)" 0 < "$in"
+timeout 5 "$F/read" "$(at 0 1 p)" 1 > "$out"; cmp "$in" "$out"
+printf 'back' > "$(at 1 1 0)/1"   # a hop is a pipe: p in it changed no seat's
+[ "$(timeout 1 cat "$(at 0 0 1)/1")" = back ]
+[ -z "$(end 0 0 2)" ]; [ -z "$(end 0 1 2)" ]
 m=$(cut -d' ' -f2 "$x/made")
 "$S/remove" "$x"; [ ! -d "$x" ]
-for p in $m; do [ ! -e "$p" ]; done
-mk ring-p 1; made icc-pipes 4; made icc-tee 1; made icc-merge 0; ends 5
-printf 'hi' > "$(at p 0 0)/0"; [ "$(timeout 1 cat "$(at 0 1 p)/0")" = hi ]
+for q in $m; do [ ! -e "$q" ]; done
+mk ring-p 1; made icc-pipes 1; made icc-tee 0; ends 2
+printf 'hi' > "$(at 0 0 p)/0"; [ "$(timeout 1 cat "$(at p 1 0)/0")" = hi ]
 "$S/remove" "$x"
-mk star 1 2; e=$(at 0 0 p); h=$(holder "$e"); [ -n "$h" ]
+mk star-p-ro 3 6
+"$S/list" | grep -qx "$x up star-p-ro 3 6"
+made icc-pipes 4; made icc-tee 0; made icc-merge 1; ends 4
+"$F/write" "$(at 1 0 p)" 0 < "$in"
+timeout 5 "$F/read" "$(at p 1 1)" 1 > "$out"; cmp "$in" "$out"
+[ -z "$(end p 0 1)" ]; [ -z "$(end 0 0 1)" ]   # p never writes, seats unjoined
+"$S/remove" "$x"
+mk star-p-ro 1; made icc-pipes 1; made icc-merge 0; ends 2; "$S/remove" "$x"
+mk ring-p-ro 3 6
+made icc-pipes 7; made icc-tee 0; made icc-merge 1; ends 10
+"$F/write" "$(at 0 0 1)" 0 < "$in"                 # the ring is left alone
+timeout 5 "$F/read" "$(at 1 1 0)" 1 > "$out"; cmp "$in" "$out"
+"$F/write" "$(at 2 0 p)" 0 < "$in"                 # and every seat writes to p
+timeout 5 "$F/read" "$(at p 1 2)" 1 > "$out"; cmp "$in" "$out"
+[ -z "$(end p 0 2)" ]
+"$S/remove" "$x"
+mk mesh-p-ro 3 6
+made icc-pipes 11; made icc-tee 1; made icc-merge 2; ends 10
+"$F/write" "$(at 0 0 p)" 0 < "$in"
+timeout 5 "$F/read" "$(at p 1 0)" 1 > "$out"; cmp "$in" "$out"
+printf 'bus' > "$(at 1 0 2)/0"                     # the mesh is left alone
+for r in 0 1 2; do [ "$(timeout 1 cat "$(at $r 1 1)/0")" = bus ]; done
+[ -z "$(end p 0 0)" ]
+"$S/remove" "$x"
+mk star-p 1 2; e=$(at 0 0 p); h=$(holder "$e"); [ -n "$h" ]
 "$S/remove" "$x"; sleep 1   # dead is dead: reaped, or a zombie nobody reaped
 case $(ps -o stat= -p "$h" 2>/dev/null) in ''|Z*) ;; *) exit 1;; esac
-mk star 1 2; e=$(at 0 0 p); touch "$e/obstruct"
+mk star-p 1 2; e=$(at 0 0 p); touch "$e/obstruct"
 "$S/remove" "$x" 2>/dev/null && exit 1
 [ -d "$x" ]; rm -f "$e/obstruct"
 "$S/remove" "$x" 2>/dev/null; [ ! -d "$x" ]; rmdir "$e" 2>/dev/null || :

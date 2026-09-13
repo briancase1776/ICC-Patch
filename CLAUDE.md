@@ -28,16 +28,24 @@ which seat.
 - A **patch**: the pipes, tees and merges one shape needs over N seats,
   made by their own skills, and a **map** saying which end each seat
   holds and which seats are on the other side of it.
-- The shapes are star, and ring and mesh each with or without the
-  parent in on it. A star is a pipe from each seat to the parent and
-  nothing between the seats. A mesh is a merge and a tee in the middle.
-  A ring is a pipe from each seat to the next; with the parent in, each
-  hop is a tee, the parent reads one merge of them all and writes one
-  tee to them all. Five shapes. Fewer seats means fewer cables, by the
-  shape alone: two seats on a mesh is one pipe, one seat with its parent
-  is one pipe.
+- The shapes are star, ring and mesh, and the parent stands to one of
+  them three ways. Bare is the seats and nothing else. `-p` puts p in a
+  place in the shape, holding what a seat in that place holds. `-p-ro`
+  leaves the seats' cables untouched and gives every seat one more write
+  end, into a merge that p reads; p never writes. A star has no bare
+  form, since a star is nothing between the seats and every cable in one
+  is p's. Eight shapes. A suffix means the same thing on every shape it
+  is spelled on: a caller that needs something else gets a shape of its
+  own, never a re-cut of an existing one. Fewer seats means fewer
+  cables, by the shape alone: two seats on a mesh is one pipe, one seat
+  with its parent is one pipe.
 - The skill covers creating, listing, and removing patches. Using one is
   reading the map and holding the ends it names. Nothing else.
+- The bay is the easy path for the common shapes, not the only path.
+  Pipes, Tee and Merge are there to be wired straight by anyone who
+  wants something the eight do not cover, and wiring them straight is
+  not hard. That is what lets the bay stay closed: nothing has to go
+  through it, so nothing has to be bent to fit through it.
 
 ## What this is not
 

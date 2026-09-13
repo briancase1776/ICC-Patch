@@ -11,13 +11,15 @@
 set -eu
 [ $# -ge 2 ] || { echo "usage: create SHAPE N [LANES]" >&2; exit 1; }
 shape=$1; n=$2; lanes=${3:-2}
-case $shape in star|ring|mesh|ring-p|mesh-p) ;;
-  *) echo "shape is star, ring, mesh, ring-p or mesh-p" >&2; exit 1;; esac
+case $shape in star-p|star-p-ro|ring|ring-p|ring-p-ro|mesh|mesh-p|mesh-p-ro) ;;
+  *) echo "shape is star-p, star-p-ro, ring, ring-p, ring-p-ro, mesh," \
+          "mesh-p or mesh-p-ro" >&2; exit 1;; esac
 # [ reads a number decimally and $(( )) reads it C-style, so 010 is ten to one
 # of them and eight to the other. Both are used here — the shape counts seats
-# with [ and wraps a ring with $(( )) — so force decimal before either sees it.
-# Whether lanes are even is Pipes' to say, and it says it when a pipe is made;
-# a shape that makes no pipe still writes the header, which is the bay's own.
+# with [ and builds the seat list with $(( )) — so force decimal before either
+# sees it. Whether lanes are even is Pipes' to say, and it says it when a pipe
+# is made; a shape that makes no pipe still writes the header, which is the
+# bay's own.
 case $n in ''|*[!0-9]*) echo "seats must be a whole number: $n" >&2; exit 1;; esac
 case $lanes in ''|*[!0-9]*) echo "lanes must be a whole number: $lanes" >&2; exit 1;; esac
 n=$((10#$n)); lanes=$((10#$lanes))
@@ -53,32 +55,44 @@ end() { echo "$1 $2 $3 $(echo "$4" | tr ' ' ,)" >> "$d/patch"; }
 cable() {  # cable A B: one pipe, seat A on side 0, seat B on side 1
   pipe; end "$1" 0 "$p" "$2"; end "$2" 1 "$p" "$1"
 }
+# Three shapes, and three ways p can stand to one. A bare shape is the seats
+# and nothing else. -p puts p in a place in the shape, holding what a seat in
+# that place holds, so it is the same construction with one more taking part.
+# -p-ro leaves the seats' cables alone and adds a fan-in: one write end each
+# into a merge, and p on the read end of it. A star has no bare form — a star
+# is nothing between the seats, so every cable in one is p's — which is why
+# the star column is the two parented shapes and no more.
+ringof() { case $# in       # each taking part shares a pipe with the next
+    1) cable "$1" "$1" ;;
+    2) cable "$1" "$2" ;;
+    *) f=$1; a=$1; shift
+       for s; do cable "$a" "$s"; a=$s; done
+       cable "$a" "$f" ;;
+  esac }
+busof() { case $# in        # a merge and a tee in the middle, everyone on both
+    1) ;;
+    2) cable "$1" "$2" ;;
+    *) pipe; b=$p; ins=; outs=
+       for s; do pipe; w=$p; pipe; r=$p; ins="$ins $w"; outs="$outs $r"
+         end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
+       merge "$b" 0 $ins; tee "$b" 0 $outs ;;
+  esac }
+fanin() {                   # every seat writes to p, and p only reads
+  [ "$n" -gt 1 ] || { cable 0 p; return; }   # one inlet is no merge
+  ins=
+  for i in $all; do pipe; w=$p; ins="$ins $w"; end "$i" 0 "$w" p; done
+  pipe; b=$p; merge "$b" 0 $ins; end p 1 "$b" "$all"
+}
 all=0; i=1; while [ "$i" -lt "$n" ]; do all="$all $i"; i=$((i + 1)); done
 case $shape in
-  star) for i in $all; do cable "$i" p; done; built=y ;;
-  ring)
-    case $n in 1) cable 0 0 ;; 2) cable 0 1 ;;
-      *) for i in $all; do cable "$i" $(( (i + 1) % n )); done ;; esac
-    built=y ;;
-  mesh|mesh-p)
-    set -- $all; [ "$shape" = mesh ] || set -- "$@" p
-    case $# in 1) ;; 2) cable "$1" "$2" ;;
-      *) pipe; b=$p; ins=; outs=
-         for s; do pipe; w=$p; pipe; r=$p; ins="$ins $w"; outs="$outs $r"
-           end "$s" 0 "$w" "$*"; end "$s" 1 "$r" "$*"; done
-         merge "$b" 0 $ins; tee "$b" 0 $outs ;; esac
-    built=y ;;
-  ring-p)
-    xs=; rs=
-    for i in $all; do j=$(( (i + 1) % n ))
-      pipe; w=$p; pipe; r=$p; pipe; x=$p; pipe; y=$p
-      xs="$xs $x"; rs="$rs $y"
-      end "$i" 0 "$w" "$j p"; end "$j" 1 "$r" "$i"; end "$i" 1 "$y" p
-      tee "$w" 0 "$r" "$x"
-    done
-    q=$x; v=$y
-    [ "$n" -eq 1 ] || { pipe; q=$p; merge "$q" 0 $xs; pipe; v=$p; tee "$v" 0 $rs; }
-    end p 1 "$q" "$all"; end p 0 "$v" "$all"; built=y ;;
+  star-p)    for i in $all; do cable "$i" p; done; built=y ;;
+  star-p-ro) fanin; built=y ;;
+  ring)      ringof $all; built=y ;;
+  ring-p)    ringof $all p; built=y ;;
+  ring-p-ro) ringof $all; fanin; built=y ;;
+  mesh)      busof $all; built=y ;;
+  mesh-p)    busof $all p; built=y ;;
+  mesh-p-ro) busof $all; fanin; built=y ;;
 esac
 # An error inside $(( )) is not a command failure, so set -e does not stop it:
 # bash abandons the case and lands here. Without this line, "here" is where
