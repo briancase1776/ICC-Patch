@@ -13,20 +13,27 @@ set -eu
 # names every piece of its kind on the box, so asking per piece makes listing
 # one patch cost as much as everyone else's work put together.
 u=$(mktemp); trap 'rm -f "$u"' EXIT
-cut -d' ' -f1 /tmp/icc-patch-*/made 2>/dev/null | sort -u | while read -r sc; do
-  [ -x "$sc/list" ] && "$sc/list" | cut -d' ' -f1,2
+mapfile -t scs < <(cut -d' ' -f1 /tmp/icc-patch-*/made 2>/dev/null | sort -u)
+# A sibling that will not answer leaves its pieces out of $u, and the patches
+# holding them read down. That is this script's whole job; it is not an error
+# to stop for, so the loop keeps the tolerance the pipeline it replaced had.
+for sc in "${scs[@]}"; do
+  [[ -x $sc/list ]] || continue
+  "$sc/list" | cut -d' ' -f1,2
 done > "$u" || :
 # A patch can go while this runs. That is a normal thing on a shared box, not
 # an error: read each file once, and skip a patch that is no longer there.
 for d in /tmp/icc-patch-*/; do
   d=${d%/}
-  h=$(sed -n 1p "$d/patch" 2>/dev/null) || h=
-  [ -n "$h" ] || continue
-  if m=$(cat "$d/made" 2>/dev/null); then
+  read -r h 2>/dev/null < "$d/patch" || h=
+  [[ -n $h ]] || continue
+  made=()
+  if mapfile -t made 2>/dev/null < "$d/made"; then
     s=up
-    [ -z "$m" ] || while read -r sc p; do
-      grep -qxF "$p up" "$u" || s=down
-    done <<< "$m"
+    # Each made line is "SCRIPTS DIR"; what a sibling's list says up is DIR.
+    for l in "${made[@]}"; do
+      grep -qxF "${l#* } up" "$u" || s=down
+    done
   else
     s=down
   fi
