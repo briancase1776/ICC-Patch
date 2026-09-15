@@ -119,12 +119,11 @@ only shell this repo guarantees anything under.
   `bash script`: that overrides what the file declares, and a script
   that runs today only because the caller forced another shell on it
   will break the day it uses anything that shell has not got. Only bash
-  is guaranteed, which is simpler than guaranteeing several, and no
-  promise is made about what an override does instead: forced under
-  dash, create answers a good command line with its usage message and
-  remove calls a patch no patch. Pipes, Tee and Merge say the same, for
-  the same reason, and the bay honours it: create and remove call their
-  scripts by path, and their own first lines pick their interpreters.
+  is guaranteed, which is simpler than guaranteeing several, and what
+  an override does instead is not this repo's to say or to care about.
+  Pipes, Tee and Merge say the same, for the same reason, and the bay
+  honours it: create and remove call their scripts by path, and their
+  own first lines pick their interpreters.
 - **Write bash, not the portable subset.** Bash is guaranteed, so use
   it: `[[ ]]`, `(( ))`, arrays, `mapfile`. Writing to the sh subset
   buys portability this repo does not promise, and pays for it in
