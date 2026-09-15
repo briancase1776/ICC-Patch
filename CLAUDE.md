@@ -88,10 +88,12 @@ it, see nothing left. The harness must not grow into a client, protocol,
 or example app. If a test needs more than a few lines of setup, the bay
 is too complicated, not the test.
 
-The harness is bash. Run it as `./tests/run.sh`, and let it run the
-siblings' scripts by their paths too. `sh tests/run.sh` overrides the
-shebang and dies on the first bashism, which is the caller overriding
-the interpreter, not the harness being broken.
+The harness is bash. Run it as `./tests/run.sh` and let the shebang pick
+the interpreter; it reaches the siblings' scripts by their paths too, so
+their first lines pick theirs. `sh tests/run.sh` overrides it, and so
+does zsh, or any other shell put in front of the path. Whether it happens
+to survive that today is not the point and is not promised: bash is the
+only shell this repo guarantees anything under.
 
 ## Rules
 
@@ -113,12 +115,16 @@ the interpreter, not the harness being broken.
   the bay works means pushing a payload through it.
 - **Bash, and the shebang decides.** Every script here is bash and says
   so on its first line. Run one by its path and let that line choose the
-  interpreter. Never reach for `sh script` or `bash script`: that
-  overrides what the file declares, and a script that runs today only
-  because the caller forced dash on it will break the day it uses
-  anything bash has. Pipes, Tee and Merge say the same, for the same
-  reason, and the bay honours it: create and remove call their scripts
-  by path, and their own first lines pick their interpreters.
+  interpreter. Never reach for `sh script`, `zsh script` or even
+  `bash script`: that overrides what the file declares, and a script
+  that runs today only because the caller forced another shell on it
+  will break the day it uses anything that shell has not got. Only bash
+  is guaranteed, which is simpler than guaranteeing several, and no
+  promise is made about what an override does instead: forced under
+  dash, create answers a good command line with its usage message and
+  remove calls a patch no patch. Pipes, Tee and Merge say the same, for
+  the same reason, and the bay honours it: create and remove call their
+  scripts by path, and their own first lines pick their interpreters.
 - **Write bash, not the portable subset.** Bash is guaranteed, so use
   it: `[[ ]]`, `(( ))`, arrays, `mapfile`. Writing to the sh subset
   buys portability this repo does not promise, and pays for it in
